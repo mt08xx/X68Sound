@@ -14,7 +14,7 @@
 #include	"pcm8.h"
 #include	"opm.h"
 
-
+#include "X68Sound_lua.h"
 
 
 
@@ -74,6 +74,16 @@ DWORD WINAPI waveOutThread( LPVOID ) {
 	while (GetMessage( &Msg, NULL, 0, 0)) {
 		if (Msg.message == THREADMES_WAVEOUTDONE) {
 
+			if(dump_flag) {
+				FILE* fp;
+				errno_t err = fopen_s(&fp, dump_filename, "ab+");
+				if (fp != NULL)
+				{
+					LPWAVEHDR p = lpwh + waveblk;
+					fwrite(p->lpData, p->dwBufferLength, 1, fp);
+					fclose(fp);
+				}
+			}
 			waveOutWrite(hwo, lpwh+waveblk, sizeof(WAVEHDR));
 
 			++waveblk;
@@ -140,6 +150,7 @@ void CALLBACK OpmTimeProc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw
 
 extern "C" int X68Sound_Start(int samprate, int opmflag, int adpcmflag,
 				  int betw, int pcmbuf, int late, double rev) {
+	X68Sound_lua_init();
 	return opm.Start(samprate, opmflag, adpcmflag, betw, pcmbuf, late, rev);
 }
 extern "C" int X68Sound_Samprate(int samprate) {
